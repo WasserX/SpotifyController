@@ -1,28 +1,29 @@
-function main(){
+var wait = 10 * 1000;
+var reloadNowPlaying;
+
+function callback(json){
+	if(json.status == "PLAYING")
+		renderHTML(json.data);
+	else
+		document.getElementById('track_info').innerHTML = "Not Playing";
+}
+
+function getNowPlaying(){
 	$.ajax({url: "/current/",
 				dataType: 'json',
-				success: function(json) {
-					if(json.status == "PLAYING")
-						showNowPlaying(json.data);
-					else
-						document.getElementById('track_info').innerHTML = "Not Playing";
-				}
+				success: callback
 			});
+	reloadNowPlaying = setTimeout(getNowPlaying, wait);
 }
 
 function sendCommand(action){
 	$.ajax({url: "/action/?action=" + action,
 				dataType: 'json',
-				success: function(json) {
-					if(json.status == "PLAYING")
-						showNowPlaying(json.data);
-					else
-						document.getElementById('track_info').innerHTML = "Not Playing";
-				}
+				success: callback
 			});
 }
 
-function showNowPlaying(track){
+function renderHTML(track){
 	var html = '<table>';
 
 	var titles = 	['Title', 'Artist', 'Album'];
@@ -38,4 +39,4 @@ function showNowPlaying(track){
 	document.getElementById('art_work').innerHTML = html; 
 }
 
-main();
+getNowPlaying();
