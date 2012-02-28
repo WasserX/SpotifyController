@@ -34,7 +34,7 @@ function showNowPlaying(track){
 		
 	document.getElementById('track_info').innerHTML = html;
 	
-	html = '<img src="' + track.artUrl + '"/>';
+	html = '<img src="' + track.artUrl + '" width="90" height="90" />';
 	document.getElementById('art_work').innerHTML = html; 
 }
 
