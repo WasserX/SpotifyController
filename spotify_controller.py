@@ -2,7 +2,8 @@
 
 import cherrypy
 import json
-from handler import *
+from spotify_handler import *
+from pulseaudio_handler import change_volume, get_volume
 import os.path
 
 PORT = 8080
@@ -21,6 +22,9 @@ class HTTPHandler:
 		spotify = Spotify()
 		if action in ['play', 'pause', 'next', 'prev', 'stop']:
 			spotify.set_status(action)
+		elif action in ['volUp', 'volDown']:
+			change_volume(30 if action == 'volUp' else -30)
+			
 		return json.dumps(spotify.get_current())
 
 # Server configuration

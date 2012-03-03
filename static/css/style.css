@@ -1,11 +1,26 @@
 body{
 background-color:#080808;
+width:auto;
 }
 
 .title{
 color:white;
+width:auto;
 }
 
 .data{
 color:#F0F0F0;
+width:auto;
+}
+
+.bcontrol{
+box-sizing: border-box;
+background-color: #33FF00;
+border-color: #404040;
+width: 3em;
+height: 2em;
+border-radius: 0.3em 1.0em 0.3em 1.0em;
+}
+
+.artwork{
 }

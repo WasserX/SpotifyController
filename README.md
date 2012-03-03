@@ -1,7 +1,7 @@
 # SpotifyController
 A web based remote control for spotify running on Linux-based systems.
-It uses the D-BUS interface to control spotify and retrieve the current track
-information.
+It uses the *D-BUS* interface to control spotify and retrieve the current track
+information. It also has a simple support to control *PulseAudio* volume.
 
 ## How to Use it
 SpotifyController depends on `cherrypy` so you need to install it first.

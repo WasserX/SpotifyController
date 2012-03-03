@@ -20,7 +20,7 @@ class Spotify:
 		Metadata")
 		
 	  	track = {}
-		data = {}
+		_data = {}
 		if info:
 			for line in info:
 				if ':artist:' in line:
@@ -31,12 +31,14 @@ class Spotify:
 					track['title'] = line.split(":", 1)[1].rstrip("\n").replace("title: ", "")
 				elif ':artUrl:' in line:
 					track['artUrl'] = line.split(":", 1)[1].rstrip("\n").replace("artUrl: ", "")
-			data['status'] = 'PLAYING'
+			
+		if track:
+			_data['status'] = 'PLAYING'
 		else:
-			data['status'] = 'NOT_PLAYING'
+			_data['status'] = 'NOT_PLAYING'
 		
-		data['data'] = track
-		return data
+		_data['data'] = track
+		return _data
 
 	def set_status(self, action):
 		identifier = "qdbus org.mpris.MediaPlayer2.spotify \

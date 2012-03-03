@@ -5,14 +5,14 @@
 <script src="/static/scripts/spotify.js"></script>
 </head>
 <body>
-
-<div id="art_work"></div>
-<div id="track_info"></div>
-<div id="controls">
-	<button type="button" onclick="sendCommand('prev')"> Prev </button>
-	<button type="button" onclick="sendCommand('play')"> Play </button>
-	<button type="button" onclick="sendCommand('next')"> Next </button>
-</div>
-
+	<div id="art_work"></div>
+	<div id="track_info"></div>
+	<div id="controls">
+		<button id="butPrev" type="button" class="bControl" onclick="sendCommand('prev')"> Prev </button>
+		<button id="butPlay" type="button" class="bControl" onclick="sendCommand('play')"> Play </button>
+		<button id="butNext" type="button" class="bControl" onclick="sendCommand('next')"> Next </button>
+		<button id="butVolDown" type="button" class="bControl" onclick="sendCommand('volDown')"> \/ </button>
+		<button id="butVolUp" type="button" class="bControl" onclick="sendCommand('volUp')"> /\ </button>
+	</div>
 </body>
 </html>
