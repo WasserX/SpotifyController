@@ -14,18 +14,23 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 class HTTPHandler:
 	@cherrypy.expose
 	def current(self):
-		spotify = Spotify()
-		return json.dumps(spotify.get_current())
+		try:
+			spotify = Spotify()
+			return json.dumps(spotify.get_current())
+		except SpotifyNotOpenError:
+			return json.dumps(dict(status='NOT_PLAYING', data={}))
 
 	@cherrypy.expose
 	def action(self, action=None):
-		spotify = Spotify()
-		if action in ['play', 'pause', 'next', 'prev', 'stop']:
-			spotify.set_status(action)
-		elif action in ['volUp', 'volDown']:
-			change_volume(30 if action == 'volUp' else -30)
-			
-		return json.dumps(spotify.get_current())
+			if action in ['play', 'pause', 'next', 'prev', 'stop']:
+				try:
+					spotify = Spotify()
+					spotify.set_status(action)
+					return json.dumps(spotify.get_current())
+				except SpotifyNotOpenError:
+					return json.dumps(dict(status='NOT_PLAYING', data={}))
+			elif action in ['volUp', 'volDown']:
+				change_volume(10 if action == 'volUp' else -10)
 
 # Server configuration
 cherrypy.tree.mount(HTTPHandler(), '', config={

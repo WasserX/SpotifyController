@@ -1,57 +1,54 @@
 #!/usr/bin/env python
-# coding: utf-8
 
 # Inspired by chakal http://redirc.org/irc/index.php/foros/46-x-chat/116-controla-el
 
 import os
-
-__module_autor__ = "Wasser"
-__module_description__ = "Control and get info from Spotify using JSON"
-__module_name__ = "spotifyHandler"
-__module_version__ = "1.0"
+import dbus
 
 class Spotify:
+	
+	def __init__(self):
+		self.bus = dbus.SessionBus()
+		try:
+			self.proxy = self.bus.get_object('org.mpris.MediaPlayer2.spotify', '/org/mpris/MediaPlayer2')
+		except:
+			raise SpotifyNotOpenError
+			
 	# Gets the current playing track information
 	def get_current(self):
-		info = os.popen("qdbus org.mpris.MediaPlayer2.spotify \
-		/org/mpris/MediaPlayer2 \
-		org.freedesktop.DBus.Properties.Get \
-		org.mpris.MediaPlayer2.Player \
-		Metadata")
+		propManager = dbus.Interface(self.proxy, dbus.PROPERTIES_IFACE)
+		metadata =  propManager.Get('org.mpris.MediaPlayer2.Player', 'Metadata')
 		
-	  	track = {}
+		track = {}
 		_data = {}
-		if info:
-			for line in info:
-				if ':artist:' in line:
-					track['artist'] = line.split(":", 1)[1].rstrip("\n").replace("artist: ", "")
-				elif ':album:' in line:
-					track['album'] = line.split(":", 1)[1].rstrip("\n").replace("album: ", "")
-				elif ':title:' in line:
-					track['title'] = line.split(":", 1)[1].rstrip("\n").replace("title: ", "")
-				elif ':artUrl:' in line:
-					track['artUrl'] = line.split(":", 1)[1].rstrip("\n").replace("artUrl: ", "")
-			
-		if track:
-			_data['status'] = 'PLAYING'
-		else:
+
+		try:
+			track['artist'] = str(metadata['xesam:artist'][0])
+			track['album'] = str(metadata['xesam:album'])
+			track['title'] = str(metadata['xesam:title'])
+			track['artUrl'] = str(metadata['mpris:artUrl'])
+		except KeyError as strerror:
+		#An error getting one of the parameters means it's not playing
 			_data['status'] = 'NOT_PLAYING'
+			track = {}
+		else:
+			_data['status'] = 'PLAYING'
 		
 		_data['data'] = track
 		return _data
 
 	def set_status(self, action):
-		identifier = "qdbus org.mpris.MediaPlayer2.spotify \
-			/org/mpris/MediaPlayer2 \
-			org.mpris.MediaPlayer2.Player."
-			
 		if action == 'play':
-			os.popen(identifier +"PlayPause")
+			self.proxy.PlayPause()
 		elif action == 'pause':
-			os.popen(identifier + "Pause")
+			self.proxy.Pause()
 		elif action == 'next':
-			os.popen(identifier + "Next")
+			self.proxy.Next()
 		elif action == 'prev':
-			os.popen(identifier + "Previous")
+			self.proxy.Previous()
 		elif action == 'stop':
-			os.popen(identifier + "Stop")
+			self.proxy.Stop()
+
+class SpotifyNotOpenError(Exception):
+	def __str__(self):
+		return 'Cannot open Bus to Spotify. Spotify is closed'			
