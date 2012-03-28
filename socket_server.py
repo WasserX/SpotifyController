@@ -1,57 +1,47 @@
 #!/usr/bin/env python
 
 """
-Create a server to serve Spotify properties and accept Spotify Commands
+Create a server to serve Spotify Notifications and accept Spotify Commands
 over the network using sockets.
 
-The communication protocol is: lengthJSON, where length is a fixed size
-string of length 5 with the length of JSON and JSON is an JSON object
-as defined by the API.
+Protocol Configuration: padded length = 5 (see socket.Client for more info).
 
-The client can send the following commands:
+A Spotify Command is:
 command: "PLAY" | "PAUSE" | "NEXT" | "PREV" | "VOLUP" | "VOLDOWN" | "GET_TRACK"
 encapsuled in an object: {command: command}
 
-Once connected, the client should expect a regular message from the server in
-that will be
+Once connected, the client should expect a regular Spotify Notification:
 {
 status: "Playing" | "Paused" | "Stopped",
 metadata:
     {
-    album: <String>
-    length: <int>
-    title: <String>
-    artUrl: <String>
+    title:  <String>
     artist: <String>
+    album:  <String>
+    artUrl: <String>
+    length: <int>
     }
 }
 status and metadata are not mandatory and any of them can be absent.
 """
 
 import controller
-
+import logging
 import socket
-import json
-from threading import Thread, Lock
-
+from connection.socket.Client import Client
 
 HOST = ''
 PORT = 15000
-ACCEPTED_LENGTH = 5
 
 
-class Client(Thread):
-    """Communicate to a socket client. Assume atomic sends/receive."""
-    connection = None
-    send_lock = Lock()
+class SpotifyClient(Client):
+    """Override notify method to receive data and take an action."""
 
-    def __init__(self, connection):
-        Thread.__init__(self, target=self._receive)
-        self.connection = connection
-        self.start()
+    def __init__(self, client, address):
+        Client.__init__(self, client, address)
 
     def notify(self, msg):
-        """Execute action sent by client."""
+        """Receive command from client and execute it."""
         try:
             command = msg['command']
             if command in ['PLAY', 'PAUSE', 'NEXT', 'PREV']:
@@ -62,38 +52,6 @@ class Client(Thread):
                     self.send(properties)
         except KeyError:
             pass
-
-    def send(self, msg):
-        """Try to obtain a lock to send a msg to a client and send."""
-        if not self.connection:
-            return False
-        self.send_lock.acquire()
-        try:
-            encoded = json.dumps(msg)
-            length = str(len(encoded))
-            padded_length = length + ' ' * (ACCEPTED_LENGTH - len(length))
-            self.connection.send(padded_length)
-            self.connection.send(encoded)
-        except socket.error:
-            print 'Broken Pipe'
-            self.connection = None
-
-        self.send_lock.release()
-        return True
-
-    def _receive(self):
-        """Runs in a separate thread. Receive json message and call notify."""
-        while self.connection:
-            try:
-                length = int(self.connection.recv(ACCEPTED_LENGTH))
-                if length:
-                    encoded = self.connection.recv(length)
-                    if encoded:
-                        msg = json.loads(encoded)
-                        self.notify(msg)
-            except (ValueError, socket.error):
-                print 'Error Receiving message from client'
-                self.connection = None
 
 
 class SpotifyNotifier(controller.SpotifyListener):
@@ -122,10 +80,11 @@ def run_server():
     sp_listener = SpotifyNotifier()
     while True:
         client, address = server.accept()
-        client = Client(client)
-        print address
+        client = SpotifyClient(client, address)
+        logging.info('Client %s connected', address)
         sp_listener.add_client(client)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     run_server()
