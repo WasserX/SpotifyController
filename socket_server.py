@@ -25,13 +25,51 @@ metadata:
 status and metadata are not mandatory and any of them can be absent.
 """
 
+import argparse
 import controller
 import logging
 import socket
 from connection.socket.Client import Client
 
-HOST = ''
-PORT = 15000
+
+def parse_args():
+    """Parse arguments from commandline and initialize default values."""
+    parser = argparse.ArgumentParser(description="""Run a Server to send
+                                     Spotify Statuses and receives commands
+                                     using sockets""")
+    parser.add_argument('--interface', type=str, default='0.0.0.0',
+                        help='Interface to listen for connections')
+    parser.add_argument('--port', type=int, default=15000,
+                        help='Port to listen for connections')
+    parser.add_argument('-max', type=int, default=5,
+                        help='Maximum number of clients to serve.')
+    parser.add_argument('-v', default=False, action="store_true",
+                        dest='verbose', help='Do we activate verbose mode')
+
+    args = parser.parse_args()
+
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+    return args
+
+
+def run_server(args):
+    """Run the server. Clients are notified of events and can send commands."""
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((args.interface, args.port))
+    server.listen(5)
+    logging.info('Listening a maximum of %s clients at %s:%s',
+                 args.max, args.interface, args.port)
+
+    sp_listener = SpotifyNotifier()
+    while True:
+        client, address = server.accept()
+        client = SpotifyClient(client, address)
+        logging.info('Client %s connected', address)
+        sp_listener.add_client(client)
 
 
 class SpotifyClient(Client):
@@ -71,20 +109,5 @@ class SpotifyNotifier(controller.SpotifyListener):
         self._clients = [x for x in self._clients if x.send(msg)]
 
 
-def run_server():
-    """Run the server. Clients are notified of events and can send commands."""
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((HOST, PORT))
-    server.listen(5)
-
-    sp_listener = SpotifyNotifier()
-    while True:
-        client, address = server.accept()
-        client = SpotifyClient(client, address)
-        logging.info('Client %s connected', address)
-        sp_listener.add_client(client)
-
-
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    run_server()
+    run_server(parse_args())
